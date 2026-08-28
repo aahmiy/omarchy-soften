@@ -1,0 +1,33 @@
+{
+  "position": "top",
+  "transparent": false,
+  "centerAnchor": "",
+  "layout": {
+    "left": [
+      { "id": "omarchy.menu" },
+      { "id": "omarchy.workspaces" },
+      { "id": "omarchy.active-window" }
+    ],
+    "center": [],
+    "right": [
+      { "id": "omarchy.indicators" },
+      { "id": "soften.status" },
+      { "id": "omarchy.system-update" },
+      { "id": "omarchy.weather" },
+      { "id": "omarchy.keyboard-layout" },
+      { "id": "omarchy.tray" },
+      { "id": "omarchy.agents" },
+      { "id": "omarchy.bluetooth" },
+      { "id": "omarchy.network" },
+      { "id": "omarchy.audio" },
+      { "id": "omarchy.monitor" },
+      { "id": "omarchy.power" },
+      {
+        "id": "omarchy.clock",
+        "format": "ddd d MMM  HH:mm",
+        "formatAlt": "d MMMM 'W'ww yyyy",
+        "verticalFormat": "HH\n—\nmm"
+      }
+    ]
+  }
+}

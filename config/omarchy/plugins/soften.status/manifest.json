@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "soften.status",
+  "name": "Status",
+  "version": "1.0.0",
+  "author": "soften",
+  "description": "One icon in the bar; a panel with services and listening ports behind it",
+  "kinds": ["bar-widget"],
+  "entryPoints": { "barWidget": "Panel.qml" },
+  "barWidget": {
+    "displayName": "Status",
+    "description": "Services and listening ports",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "schema": [
+      { "key": "units", "type": "string", "label": "Extra systemd units, space separated" },
+      { "key": "interval", "type": "int", "label": "Refresh interval while open (ms)" }
+    ]
+  }
+}

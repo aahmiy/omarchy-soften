@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>soften</title>
+<meta name="description" content="A soft-minimalist system pass for Omarchy: one radius, no colored borders, motion you feel rather than watch.">
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap");
+
+/* ------------------------------------------------------------------ tokens
+   The page is set in the values the project installs: 12px radius, no
+   borders anywhere, surfaces separated by shadow and fill alone. */
+:root {
+  --ground:      #eef2f5;
+  --surface:     #ffffff;
+  --surface-2:   #e4eaef;
+  --ink:         #0f1c24;
+  --ink-2:       #48606e;
+  --ink-3:       #7d94a1;
+  --accent:      #2d7ba6;
+  --accent-soft: rgba(45, 123, 166, 0.10);
+  --shadow:      0 6px 22px rgba(15, 28, 36, 0.10), 0 1px 2px rgba(15, 28, 36, 0.06);
+  --shadow-lift: 0 10px 34px rgba(15, 28, 36, 0.14), 0 1px 2px rgba(15, 28, 36, 0.06);
+  --hairline:    rgba(15, 28, 36, 0.07);
+
+  --radius:   12px;
+  --radius-s: 8px;
+
+  --sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --mono: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --measure: 68ch;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:      #0c141a;
+    --surface:     #16242d;
+    --surface-2:   #1d3039;
+    --ink:         #d6e2ee;
+    --ink-2:       #9db0be;
+    --ink-3:       #6b8090;
+    --accent:      #7fc0e4;
+    --accent-soft: rgba(127, 192, 228, 0.12);
+    --shadow:      0 6px 22px rgba(0, 0, 0, 0.38), 0 1px 2px rgba(0, 0, 0, 0.28);
+    --shadow-lift: 0 10px 34px rgba(0, 0, 0, 0.46), 0 1px 2px rgba(0, 0, 0, 0.28);
+    --hairline:    rgba(214, 226, 238, 0.09);
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground:      #0c141a;
+  --surface:     #16242d;
+  --surface-2:   #1d3039;
+  --ink:         #d6e2ee;
+  --ink-2:       #9db0be;
+  --ink-3:       #6b8090;
+  --accent:      #7fc0e4;
+  --accent-soft: rgba(127, 192, 228, 0.12);
+  --shadow:      0 6px 22px rgba(0, 0, 0, 0.38), 0 1px 2px rgba(0, 0, 0, 0.28);
+  --shadow-lift: 0 10px 34px rgba(0, 0, 0, 0.46), 0 1px 2px rgba(0, 0, 0, 0.28);
+  --hairline:    rgba(214, 226, 238, 0.09);
+}
+
+/* ------------------------------------------------------------------- base */
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: clamp(2.5rem, 6vw, 5.5rem) clamp(1.25rem, 4vw, 2.5rem) 5rem;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(3.5rem, 7vw, 6rem);
+}
+
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+h1, h2, h3 { text-wrap: balance; margin: 0; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
+h2 { font-size: clamp(1.35rem, 2.6vw, 1.7rem); }
+h3 { font-size: 1.02rem; letter-spacing: -0.01em; }
+p  { margin: 0; max-width: var(--measure); }
+
+code, kbd, pre { font-family: var(--mono); font-size: 0.875em; }
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 0;
+}
+
+.stack { display: flex; flex-direction: column; gap: 1.1rem; }
+
+/* ------------------------------------------------------------------ hero */
+.hero { display: flex; flex-direction: column; gap: 2.5rem; }
+
+.wordmark {
+  font-family: var(--mono);
+  font-size: clamp(3.2rem, 11vw, 5.5rem);
+  font-weight: 400;
+  letter-spacing: -0.055em;
+  line-height: 0.9;
+  margin: 0;
+  color: var(--ink);
+}
+.wordmark .dot { color: var(--accent); }
+
+.lede {
+  font-size: clamp(1.1rem, 2.2vw, 1.3rem);
+  line-height: 1.5;
+  color: var(--ink-2);
+  max-width: 36ch;
+}
+.lede strong { color: var(--ink); font-weight: 500; }
+
+/* ------------------------------------------------ the desktop, as a mock */
+.mock {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-lift);
+  background:
+    radial-gradient(120% 90% at 12% 0%, #26506b 0%, transparent 55%),
+    radial-gradient(100% 80% at 92% 105%, #1c3f52 0%, transparent 60%),
+    linear-gradient(160deg, #16242d 0%, #0b141a 100%);
+  padding: 0 0 10px;
+  font-size: 13px;
+}
+
+.mock-bar {
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 12px;
+  color: #e3edf6;
+  background: rgba(22, 36, 45, 0.55);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  font-size: 12.5px;
+}
+.mock-bar .left,
+.mock-bar .right { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.mock-bar .title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.85; }
+.mock-bar .glyph { opacity: 0.72; }
+.mock-bar .glyph.lit { opacity: 1; color: #7fc0e4; }
+.mock-bar .ws { display: flex; gap: 7px; font-variant-numeric: tabular-nums; }
+.mock-bar .ws span { opacity: 0.32; }
+.mock-bar .ws .on { opacity: 1; }
+.mock-bar .clock { white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+.mock-body {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 10px;
+  padding: 10px;
+}
+@media (max-width: 620px) {
+  .mock-body { grid-template-columns: 1fr; }
+  .mock-body .win-status { display: none; }
+}
+
+.win {
+  border-radius: var(--radius);
+  background: rgba(11, 20, 26, 0.94);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.42);
+  padding: 14px 16px;
+  color: #cfdeea;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.75;
+  min-height: 214px;
+}
+.win .prompt { color: #7fc0e4; }
+.win .dim { color: #6b8090; }
+.win .cursor {
+  display: inline-block;
+  width: 7px; height: 15px;
+  background: #cfdeea;
+  vertical-align: -3px;
+  animation: blink 1.15s steps(1, end) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* the status panel, as the bar actually draws it */
+.win-status {
+  background: rgba(22, 36, 45, 0.94);
+  font-family: var(--sans);
+  font-size: 12.5px;
+  line-height: 1.5;
+  padding: 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.win-status .head { display: flex; flex-direction: column; gap: 1px; padding: 0 8px; }
+.win-status .head b { color: #e3edf6; font-weight: 600; font-size: 13.5px; }
+.win-status .head span { color: #8fa3b3; font-family: var(--mono); font-size: 11px; }
+.win-status .sec {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: #7d94a1;
+  padding: 0 8px;
+}
+.win-status .row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 3px 8px;
+  border-radius: var(--radius-s);
+}
+.win-status .row.hot { background: rgba(214, 226, 238, 0.08); }
+.win-status .dot { width: 6px; height: 6px; border-radius: 50%; background: #4b5f6d; flex: none; }
+.win-status .dot.up { background: #cfdeea; }
+.win-status .name { color: #b9cadb; }
+.win-status .name.off { color: #6b8090; }
+.win-status .num { font-family: var(--mono); color: #cfdeea; min-width: 3.6em; }
+.win-status .tail { margin-left: auto; font-family: var(--mono); font-size: 10.5px; color: #6b8090; }
+.win-status .tail.warn { color: #d9985a; }
+
+/* the one orchestrated moment: the load sequence the config installs — the
+   same curve and the same durations, halved from where they started */
+.mock-bar { animation: barIn 170ms var(--ease) both; }
+.win      { animation: winIn 210ms var(--ease) both; }
+.win-term   { animation-delay: 50ms; }
+.win-status { animation-delay: 95ms; }
+@keyframes barIn { from { opacity: 0; transform: translateY(-30px); } }
+@keyframes winIn { from { opacity: 0; transform: scale(0.94); } }
+
+.mock-caption {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--ink-3);
+  letter-spacing: 0.02em;
+  margin: 0.9rem 0 0;
+}
+
+/* ----------------------------------------------------------------- install */
+.cmd {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 0.85rem 1.1rem;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--ink);
+  width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.cmd .sigil { color: var(--ink-3); user-select: none; }
+
+/* ------------------------------------------------------------------ cards */
+.ideas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(228px, 1fr));
+  gap: 1rem;
+}
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.4rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.ideas.four { grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); }
+
+.card .tok {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 6px;
+  padding: 0.15rem 0.45rem;
+  width: fit-content;
+}
+.card p { font-size: 0.925rem; color: var(--ink-2); }
+
+/* ------------------------------------------------------------------ table */
+.scroll { overflow-x: auto; border-radius: var(--radius); box-shadow: var(--shadow); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; min-width: 520px; }
+th, td { text-align: left; padding: 0.7rem 1.1rem; vertical-align: top; }
+thead th {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 500;
+  padding-top: 1rem;
+}
+tbody tr + tr td { box-shadow: inset 0 1px 0 var(--hairline); }
+td:first-child { font-family: var(--mono); font-size: 0.82rem; color: var(--ink); white-space: nowrap; }
+td:last-child { color: var(--ink-2); }
+
+/* ------------------------------------------------------------------- pre */
+pre {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.15rem 1.3rem;
+  margin: 0;
+  overflow-x: auto;
+  line-height: 1.75;
+  color: var(--ink);
+}
+pre .c { color: var(--ink-3); }
+
+/* ------------------------------------------------------------------ knobs */
+.knobs { display: grid; gap: 0.55rem; }
+.knob {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 0.4rem 1.4rem;
+  align-items: baseline;
+  background: var(--surface);
+  border-radius: var(--radius-s);
+  box-shadow: var(--shadow);
+  padding: 0.7rem 1.1rem;
+  font-size: 0.925rem;
+}
+.knob .want { color: var(--ink-2); }
+.knob .do { font-family: var(--mono); font-size: 0.8rem; color: var(--ink); }
+@media (max-width: 560px) { .knob { grid-template-columns: 1fr; } }
+
+/* ------------------------------------------------------------------ notes */
+.note {
+  background: var(--surface-2);
+  border-radius: var(--radius);
+  padding: 1.3rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.note p { font-size: 0.925rem; color: var(--ink-2); }
+.note h3 { color: var(--ink); }
+
+footer {
+  color: var(--ink-3);
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  letter-spacing: 0.02em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<main class="page">
+
+  <!-- ------------------------------------------------------------- hero -->
+  <header class="hero">
+    <div class="stack">
+      <p class="eyebrow">A system pass for Omarchy</p>
+      <h1 class="wordmark">soften<span class="dot">.</span></h1>
+      <p class="lede">
+        One corner radius for the whole desktop, <strong>no colored borders
+        anywhere</strong>, and motion you feel rather than watch.
+      </p>
+    </div>
+
+    <div>
+      <div class="mock" aria-hidden="true">
+        <div class="mock-bar">
+          <div class="left">
+            <span class="glyph">◫</span>
+            <span class="ws"><span class="on">1</span><span class="on">2</span><span>3</span><span>4</span><span class="on">9</span></span>
+            <span class="title">nvim — soften-omarchy/config/hypr/looknfeel.lua</span>
+          </div>
+          <div class="right">
+            <span class="glyph lit">▤</span>
+            <span class="glyph">◐</span><span class="glyph">▲</span><span class="glyph">◈</span><span class="glyph">▮</span>
+            <span class="clock">Fri 28 Aug 19:04</span>
+          </div>
+        </div>
+        <div class="mock-body">
+          <div class="win win-term">
+            <div><span class="prompt">~</span> <span class="dim">soften-omarchy</span> ./install.sh</div>
+            <div class="dim">==&gt; Backing up current state to backups/20260828-1904</div>
+            <div class="dim">==&gt; Writing configs</div>
+            <div class="dim">==&gt; Status widget</div>
+            <div class="dim">==&gt; Applying</div>
+            <div><span class="prompt">~</span> <span class="cursor"></span></div>
+          </div>
+          <div class="win win-status">
+            <div class="head">
+              <b>Status</b>
+              <span>1/5 up · 8 ports · 1 exposed</span>
+            </div>
+            <div>
+              <div class="sec">SERVICES</div>
+              <div class="row hot"><i class="dot up"></i><span class="name">PostgreSQL</span><span class="tail">running</span></div>
+              <div class="row"><i class="dot"></i><span class="name off">Docker</span><span class="tail">dead</span></div>
+              <div class="row"><i class="dot"></i><span class="name off">libvirt</span><span class="tail">dead</span></div>
+            </div>
+            <div>
+              <div class="sec">LISTENING</div>
+              <div class="row"><span class="num">5432</span><span class="name">postgres</span></div>
+              <div class="row"><span class="num">8000</span><span class="name">uvicorn</span></div>
+              <div class="row"><span class="num">15611</span><span class="name">postman</span><span class="tail warn">exposed</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="mock-caption">
+        rounding&nbsp;=&nbsp;12 · border_size&nbsp;=&nbsp;0 · bar&nbsp;background-alpha&nbsp;=&nbsp;0.55 — this page is set in the same values
+      </p>
+    </div>
+
+    <div class="cmd">
+      <span class="sigil">$</span>
+      <span>git clone https://github.com/aahmiy/soften-omarchy &amp;&amp; cd soften-omarchy &amp;&amp; ./install.sh</span>
+    </div>
+  </header>
+
+  <!-- ------------------------------------------------------------ ideas -->
+  <section class="stack">
+    <p class="eyebrow">Four ideas</p>
+    <div class="ideas four">
+      <article class="card">
+        <span class="tok">rounding = 12</span>
+        <h3>One radius, everywhere</h3>
+        <p>
+          The Omarchy shell reads <code>decoration:rounding</code> back out of Hyprland, so bar
+          popups, notifications, the menu, the polkit prompt and the lock screen all round to
+          match. Change one number and the whole desktop follows.
+        </p>
+      </article>
+      <article class="card">
+        <span class="tok">border_size = 0</span>
+        <h3>Depth, not outline</h3>
+        <p>
+          No window frame at all — which is what removes the theme's tinted active-border
+          gradient. Focus is carried by a plain black shadow, so it never fights the wallpaper.
+          Shell controls follow the same rule and state themselves by fill alone.
+        </p>
+      </article>
+      <article class="card">
+        <span class="tok">speed = 2.1</span>
+        <h3>Motion you don't wait for</h3>
+        <p>
+          Three bezier curves, nothing over ~220ms. Windows arrive from 94% and leave a little
+          faster than they came; workspace switching gets a 15% slide that Omarchy ships turned
+          off. Nothing appears out of nowhere — that is the whole job.
+        </p>
+      </article>
+      <article class="card">
+        <span class="tok">soften.status</span>
+        <h3>One icon, not a dashboard</h3>
+        <p>
+          Workspaces and the focused window on the left, the widget row and the clock on the
+          right, nothing in the middle. Status is a single glyph that only changes color when
+          something has actually failed.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ----------------------------------------------------------- status -->
+  <section class="stack">
+    <p class="eyebrow">Behind the glyph</p>
+    <p>
+      <code>soften.status</code> is a bar widget, not a monitor. Nothing runs in the background:
+      two <code>systemctl</code> calls and one <code>ss</code> fire when the panel opens and
+      every five seconds while it stays open. Nothing needs root.
+    </p>
+    <div class="ideas">
+      <article class="card">
+        <h3>Services</h3>
+        <p>
+          Every watched systemd unit that is actually installed, with its live sub-state.
+          Candidates cover the usual databases, container runtimes and web servers; anything not
+          installed is dropped, so the list only shows what this machine really runs. Click a row
+          for <code>systemctl status</code> in a terminal.
+        </p>
+      </article>
+      <article class="card">
+        <h3>Listening</h3>
+        <p>
+          Every listening TCP socket, with the process name where the kernel will tell an
+          unprivileged process. Anything bound off loopback is tagged <code>exposed</code> — the
+          one thing on the page that gets to use the urgent color.
+        </p>
+      </article>
+    </div>
+<pre><code><span class="c">// add your own units, or change the refresh rate, in shell.json</span>
+{ "id": "soften.status", "units": "gitea vaultwarden", "interval": 3000 }</code></pre>
+  </section>
+
+  <!-- ----------------------------------------------------------- changes -->
+  <section class="stack">
+    <p class="eyebrow">What it writes</p>
+    <p>
+      Nothing outside this list is touched — fonts included. Your keybindings, monitors, input
+      settings, idle timings and theme are left exactly as they are, and
+      <code>omarchy theme set</code> keeps working, because every file lands in the layer above
+      the active theme.
+    </p>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr><th scope="col">Path</th><th scope="col">What lands there</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>~/.config/hypr/looknfeel.lua</td>
+            <td>Radius, zero borders, neutral shadow, blur, motion curves</td>
+          </tr>
+          <tr>
+            <td>~/.config/omarchy/shell.toml</td>
+            <td>Bar translucency, borderless controls, neutral hairlines on every popup</td>
+          </tr>
+          <tr>
+            <td>~/.config/omarchy/shell.json</td>
+            <td>The <code>bar</code> subtree only — layout and widgets</td>
+          </tr>
+          <tr>
+            <td>~/.config/omarchy/plugins/soften.status/</td>
+            <td>The status widget: a manifest, one QML file, one shell script</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ----------------------------------------------------------- restore -->
+  <section class="stack">
+    <p class="eyebrow">Putting it back</p>
+    <p>
+      Every file is copied into <code>backups/&lt;timestamp&gt;/</code> before it is written, and
+      the paths that did not exist yet are recorded too. Restoring replays both: files copied
+      back byte for byte, created files deleted again.
+    </p>
+<pre><code>./restore.sh          <span class="c"># back to how things were before soften</span>
+./restore.sh --last   <span class="c"># undo only the most recent install</span>
+./restore.sh --list   <span class="c"># show every backup taken</span></code></pre>
+    <p>
+      The first install writes <code>backups/ORIGINAL</code> and never moves it again. That is
+      the one <code>restore.sh</code> defaults to — after a second install, the newest backup
+      describes a machine that already had soften on it, which is not what putting it back means.
+    </p>
+  </section>
+
+  <!-- ------------------------------------------------------------ tuning -->
+  <section class="stack">
+    <p class="eyebrow">Knobs</p>
+    <p>Both config files hot-reload on save. Most of it is one number in one place.</p>
+    <div class="knobs">
+      <div class="knob"><span class="want">Softer or sharper corners</span><span class="do">rounding · rounding_power</span></div>
+      <div class="knob"><span class="want">More or less glass in the bar</span><span class="do">[bar] background-alpha</span></div>
+      <div class="knob"><span class="want">Blur costs too much on this GPU</span><span class="do">decoration.blur.enabled = false</span></div>
+      <div class="knob"><span class="want">Snappier or slower motion</span><span class="do">hl.animation speed · hundredths of a second</span></div>
+      <div class="knob"><span class="want">Move a widget</span><span class="do">omarchy bar move omarchy.clock --section center</span></div>
+      <div class="knob"><span class="want">Drop the status widget</span><span class="do">omarchy plugin disable soften.status</span></div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------- notes -->
+  <section class="stack">
+    <p class="eyebrow">Worth knowing</p>
+    <div class="note">
+      <h3>Why the scripts move in a particular order</h3>
+      <p>
+        Mutating a plugin directory while the shell still has that plugin loaded makes it
+        hot-reload, and Quickshell 0.3.0 segfaults on that path — a bad
+        <code>dynamic_cast</code> in <code>IpcHandler::updateRegistration</code> during Repeater
+        regeneration.
+      </p>
+      <p>
+        So both scripts write a <code>shell.json</code> with the soften widgets dropped first, let
+        the shell settle, and only then swap the plugin directory. Config writes go through a
+        temp file and a rename, so a watcher never reads half a file.
+      </p>
+    </div>
+  </section>
+
+  <footer>
+    soften-omarchy · built for Omarchy 4 · Hyprland 0.56 · Quickshell 0.3
+  </footer>
+
+</main>
+</body>
+</html>

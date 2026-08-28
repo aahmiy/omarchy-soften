@@ -1,0 +1,80 @@
+# Machine-level Omarchy shell styling.
+#
+# The shell layers this file on top of the active theme's shell.toml and user
+# keys win, so everything here survives `omarchy theme set`. Only the keys that
+# differ from the theme are listed; anything not mentioned keeps following the
+# theme. Saved changes are picked up live, no restart needed.
+
+[bar]
+# Height stays at Omarchy's stock 26px on purpose. The bar gets quieter, not
+# taller.
+size-horizontal  = 26
+size-vertical    = 28
+scale-with-font  = true
+# A glass strip rather than a solid band. The frost comes from the
+# `omarchy-bar` layer rule in ~/.config/hypr/looknfeel.lua.
+background-alpha = 0.55
+
+[font]
+base-size = 12
+
+[controls]
+# Fills only. Buttons, dropdowns and tab strips announce their state by
+# getting lighter, never by drawing an outline around themselves.
+normal-border-width       = 0
+hover-cursor-border-width = 0
+focus-border-width        = 0
+selected-border-width     = 0
+normal-fill-alpha         = 0.03
+hover-cursor-fill-alpha   = 0.08
+focus-fill-alpha          = 0.08
+selected-fill-alpha       = 0.14
+pressed-fill-alpha        = 0.18
+selection-fill-alpha      = 0.28
+
+# Every surface below drops the theme's accent-colored frame for a neutral
+# hairline at low alpha: still a defined edge, no color.
+
+[popups]
+background-alpha = 0.92
+border           = "foreground"
+border-alpha     = 0.10
+border-width     = 1
+
+[tooltip]
+background-alpha = 0.92
+border           = "foreground"
+border-alpha     = 0.10
+
+[notifications]
+background-alpha = 0.92
+border           = "foreground"
+border-alpha     = 0.10
+border-width     = 1
+
+[menu]
+background-alpha          = 0.94
+border                    = "foreground"
+border-alpha              = 0.10
+selected-background-alpha = 0.10
+selected-border-alpha     = 0.0
+
+[launcher]
+background-alpha          = 0.94
+border                    = "foreground"
+border-alpha              = 0.10
+selected-background-alpha = 0.10
+selected-border-alpha     = 0.0
+
+[polkit]
+background-alpha = 0.94
+border           = "foreground"
+border-alpha     = 0.10
+
+[lock]
+border        = "foreground"
+border-active = "foreground"
+border-alpha  = 0.16
+
+[image-picker]
+unselected-border-alpha = 0.0
