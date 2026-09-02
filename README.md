@@ -24,9 +24,17 @@ the terminals keep whatever `omarchy font set` last chose.
 | `~/.config/omarchy/shell.toml` | Bar translucency, borderless controls, neutral hairlines |
 | `~/.config/omarchy/shell.json` | The `bar` subtree only — layout and widgets |
 | `~/.config/omarchy/plugins/soften.status/` | The status widget |
+| `~/.config/hypr/input.lua` | Caps Lock fix only (see below) — skipped if the file doesn't exist |
 
-Your idle/lock timings, keybindings, monitors, input settings, fonts and theme
-are not touched.
+Your idle/lock timings, keybindings, monitors, fonts and theme are not
+touched. The one exception is Caps Lock: Omarchy's default `kb_options`
+remaps it to a Compose key, which reads as "Caps Lock doesn't work." A
+managed block (marked `-- soften: capslock fix --`, safe to delete by hand)
+strips just the `compose:caps` token from whatever `kb_options` is active,
+leaving any layout/variant options you already set alone. It's read from the
+live `hyprctl` value rather than hardcoded, so it holds up across Omarchy
+versions, and it only ever edits `input.lua` if that file already exists —
+it's never created from scratch.
 
 ## The four ideas
 

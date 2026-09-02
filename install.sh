@@ -29,10 +29,16 @@ STAGING="$HOME/.cache/soften-status-staging"
 # last (see "why the order matters" below).
 TRACKED=(
   ".config/hypr/looknfeel.lua"
+  ".config/hypr/input.lua"
   ".config/omarchy/shell.toml"
   ".config/omarchy/shell.json"
   "$STATUS_REL"
 )
+
+# Markers around the Caps Lock fix block in input.lua, so re-running the
+# installer replaces its own block instead of stacking copies.
+CAPSLOCK_MARK_BEGIN="-- soften: capslock fix (managed block) --"
+CAPSLOCK_MARK_END="-- soften: end capslock fix --"
 
 say()  { printf '\033[1m==>\033[0m %s\n' "$*"; }
 info() { printf '    %s\n' "$*"; }
@@ -52,6 +58,72 @@ atomic_install() { # mode  src  dst
   cat "$src" >"$tmp"
   chmod "$mode" "$tmp"
   mv -f "$tmp" "$dst"
+}
+
+# Omarchy's default kb_options ships "compose:caps", which remaps the
+# physical Caps Lock key to a Compose key instead of toggling caps. This
+# patches ~/.config/hypr/input.lua *only if it already exists* -- it never
+# creates the file -- and strips just the "compose:caps" token from whatever
+# kb_options hyprctl reports as active right now, so any layout/variant
+# options already in play (multi-layout grp:alts_toggle, etc.) survive
+# untouched. Reading the live value instead of hardcoding Omarchy's current
+# default is what keeps this working across Omarchy versions.
+fix_capslock() {
+  local input_lua="$HOME/.config/hypr/input.lua"
+  if [[ ! -f $input_lua ]]; then
+    info "~/.config/hypr/input.lua not found — left alone"
+    return 0
+  fi
+
+  if grep -qF -- "$CAPSLOCK_MARK_BEGIN" "$input_lua"; then
+    python3 - "$input_lua" "$CAPSLOCK_MARK_BEGIN" "$CAPSLOCK_MARK_END" <<'PY'
+import sys
+path, begin, end = sys.argv[1:4]
+with open(path) as fh:
+    lines = fh.readlines()
+out, skipping = [], False
+for line in lines:
+    if begin in line:
+        skipping = True
+        continue
+    if end in line:
+        skipping = False
+        continue
+    if not skipping:
+        out.append(line)
+with open(path, "w") as fh:
+    fh.writelines(out)
+PY
+  fi
+
+  local cleaned
+  cleaned="$(python3 - <<'PY'
+import json, subprocess
+
+try:
+    raw = subprocess.run(
+        ["hyprctl", "getoption", "input:kb_options", "-j"],
+        capture_output=True, text=True, timeout=5,
+    ).stdout
+    current = json.loads(raw).get("str", "")
+except Exception:
+    current = ""
+
+# Omarchy's shipped default, used only if hyprctl couldn't be read.
+current = current or "compose:caps,shift:both_capslock_cancel"
+tokens = [t for t in current.split(",") if t and t != "compose:caps"]
+print(",".join(tokens))
+PY
+  )"
+
+  {
+    printf '\n%s\n' "$CAPSLOCK_MARK_BEGIN"
+    printf '%s\n' "-- Restores normal Caps Lock; Omarchy's default remaps it to Compose."
+    printf 'hl.config({ input = { kb_options = "%s" } })\n' "$cleaned"
+    printf '%s\n' "$CAPSLOCK_MARK_END"
+  } >>"$input_lua"
+
+  info "~/.config/hypr/input.lua (Caps Lock restored)"
 }
 
 # ---------------------------------------------------------------- preflight
@@ -97,6 +169,9 @@ fi
 say "Writing configs"
 atomic_install 644 "$CONFIG/hypr/looknfeel.lua" "$HOME/.config/hypr/looknfeel.lua"
 info "~/.config/hypr/looknfeel.lua"
+
+say "Caps Lock"
+fix_capslock
 
 # -------------------------------------------------------------- shell.json
 #
